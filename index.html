@@ -123,13 +123,12 @@
     }, 4000);
 
     // Example encoded account tokens (Base64)
-    const accountTokens = {
-      "T01FR0EtNDE4": { username: "foi-trainee-22", level: 1 },
-      "REVMVEEtMzk5": { username: "foi-agent-11", level: 2 },
-      "QkVUQS1TQ0FO": { username: "foi-officer-07", level: 3 },
-      "R0FNTUEtTEVELTQx": { username: "dept-head-01", level: 4 },
-      "QUxQSEEtQ09SRSI=": { username: "director-omega", level: 5 }
-    };
+fetch('tokens.json')
+  .then(res => res.json())
+  .then(data => {
+    // use data.tokens[token] instead of hardcoding
+  });
+
 
     let loggedInUser = null;
 
