@@ -75,6 +75,18 @@
     .audio-player audio {
       width: 100%;
     }
+    .banner {
+      position: fixed;
+      top: 0;
+      width: 100%;
+      text-align: center;
+      background-color: #1a0000;
+      color: #ff0000;
+      border-bottom: 1px solid #ff0000;
+      padding: 0.3rem;
+      font-size: 0.9rem;
+      z-index: 10;
+    }
   </style>
 </head>
 <body>
@@ -83,6 +95,7 @@
   </div>
 
   <div class="main-interface" id="interface">
+    <div class="banner">⚠ SYSTEM NOTICE: This terminal is currently under renovation. Many classified documents are temporarily inaccessible. Please proceed using active login credentials only. ⚠</div>
     <div class="left-panel">
       <div class="output-area" id="terminal"></div>
       <div class="command-input">
@@ -99,62 +112,69 @@
   <script>
     setTimeout(() => {
       document.getElementById("boot").style.display = "none";
-      const interfaceEl = document.getElementById("interface");
-      interfaceEl.style.display = "grid";
+      document.getElementById("interface").style.display = "grid";
     }, 4000);
 
-    const documentNames = [
-      "Prototype Incident Report",
-      "Power Node 3 Maintenance Log",
-      "Psych Eval - Operative R32",
-      "Shelter Supply Audit",
-      "FOI Intercepted Communication",
-      "Mission Briefing - Operation Ember",
-      "Genetic Mutation Chart",
-      "System Anomaly Report",
-      "Artifact Recovery Notes",
-      "Expedition Log Alpha 9"
+    const dummyDocs = [
+      "Incident Report 12A",
+      "Containment Failure Log Delta-6",
+      "Maintenance Report Omega-11",
+      "Expedition Summary Red Zone 3",
+      "Emergency Response Debrief Bravo",
+      "Thermal Outage Alert Central Grid",
+      "Subject Isolation Case 009",
+      "Mutagenic Sample Transport Log",
+      "Personnel Reassignment Memo",
+      "Unexplained Signal Record 8"
     ];
 
     function generateDocuments(level) {
-      const docs = [];
-      for (let i = 0; i < documentNames.length; i++) {
-        const show = level >= 3 || i < 5; // hide second half until level 3+
-        if (show) {
-          const audio = i % 3 === 0 && level >= 3;
-          docs.push({
-            name: `${documentNames[i]}.txt`,
-            content: `--- ${documentNames[i]} ---\nClassified contents.`,
-            audio: audio
-          });
+      const realDocs = [];
+
+      if (level === 1 || level === 2) {
+        // Only real placeholder documents for now
+        realDocs.push({ name: "Kibaek Overview.txt", content: "Welcome to Kibaek Simulation. Confidential." });
+        if (level === 2) {
+          realDocs.push({ name: "Shelter Systems Summary.txt", content: "Shelter capacities and layout design." });
         }
+        return realDocs;
       }
-      return docs;
+
+      // Levels 3+ get access to dummy documents
+      const combined = [...realDocs];
+      dummyDocs.forEach((doc, i) => {
+        combined.push({
+          name: `${doc}.txt`,
+          content: `--- ${doc} ---\nReport content classified.`,
+          audio: i % 3 === 0 && level >= 4
+        });
+      });
+      return combined;
     }
 
     const accounts = {
       "foi-trainee-22": {
-        password: "48561858s58b8q1s56V85w18618742@4s8f3@",
+        password: "omega-train",
         level: 1,
         documents: generateDocuments(1)
       },
       "foi-agent-11": {
-        password: "717s7w4a1s5h4b5s78168ds84S1528@583#s7",
+        password: "delta-shadow",
         level: 2,
         documents: generateDocuments(2)
       },
       "foi-officer-07": {
-        password: "A5s1f8w6S512@6s1f%R81sA#E81s18@1#351s8#",
+        password: "beta-vector",
         level: 3,
         documents: generateDocuments(3)
       },
       "dept-head-01": {
-        password: "S741g6AS84g51sa687s4d@141#6784$4178@",
+        password: "gamma-priority",
         level: 4,
         documents: generateDocuments(4)
       },
       "director-omega": {
-        password: "Prototype",
+        password: "alpha-core",
         level: 5,
         documents: generateDocuments(5)
       }
