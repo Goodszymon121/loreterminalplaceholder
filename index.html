@@ -6,44 +6,45 @@
   <title>The Government Terminal</title>
   <style>
     body {
-      background-color: #010b13;
+      background-color: #0a0f1c;
       color: #00ff00;
       font-family: 'Courier New', Courier, monospace;
       margin: 0;
       padding: 0;
+      overflow: hidden;
     }
-    .bios {
+    .boot-screen {
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       height: 100vh;
+      background-color: #010b13;
+      color: #00ff00;
+      font-size: 1.2rem;
+      white-space: pre;
+    }
+    .main-interface {
+      display: none;
+      grid-template-columns: 1fr 2fr 2fr;
+      grid-template-rows: 1fr auto;
+      height: 100vh;
+      background: linear-gradient(to right, #0a0f1c, #111);
+      color: #00ff00;
+    }
+    .left-panel {
       padding: 1rem;
-      box-sizing: border-box;
+      border-right: 2px solid #222;
     }
-    .banner {
-      font-size: 1rem;
-      color: #ff0000;
-      border: 1px solid #ff0000;
-      padding: 0.5rem;
-      background-color: #1a0000;
-      margin-bottom: 1rem;
-    }
-    .header {
-      font-size: 1.25rem;
-      color: #00ffff;
-      margin-bottom: 1rem;
-    }
-    .terminal-area {
-      background-color: #000000;
-      border: 1px solid #00ff00;
-      padding: 1rem;
-      flex-grow: 1;
+    .output-area {
+      height: calc(100vh - 3rem);
       overflow-y: auto;
       white-space: pre-wrap;
+      font-size: 0.9rem;
     }
-    .input-area {
-      margin-top: 1rem;
+    .command-input {
+      padding-top: 0.5rem;
     }
-    input[type="text"] {
+    .command-input input {
       width: 100%;
       padding: 0.5rem;
       background-color: #010b13;
@@ -51,34 +52,86 @@
       border: 1px solid #00ff00;
       font-family: 'Courier New', Courier, monospace;
     }
+    .right-panel {
+      padding: 1rem;
+      border-left: 2px solid #222;
+      background-color: #0c121f;
+      overflow-y: auto;
+    }
+    .doc-viewer {
+      background-color: #111;
+      color: #00ff00;
+      padding: 1rem;
+      border: 1px solid #00ff00;
+      font-size: 0.9rem;
+    }
+    .audio-player {
+      background-color: #222;
+      padding: 0.5rem;
+      margin-top: 1rem;
+      border: 1px solid #00ff00;
+      border-radius: 5px;
+    }
+    .audio-player audio {
+      width: 100%;
+    }
   </style>
 </head>
 <body>
-  <div class="bios">
-    <div class="banner">
-      ⚠ SYSTEM NOTICE: Terminal undergoing scheduled renovation. Limited file access. Expect missing archive nodes. ⚠
+  <div class="boot-screen" id="boot">
+    Initializing system BIOS v4.2\nChecking memory... OK\nConnecting to GOVNET... OK\nAuthenticating Terminal Integrity... OK\nLoading kernel modules... OK\nSystem ready. Launching interface...
+  </div>
+
+  <div class="main-interface" id="interface">
+    <div class="left-panel">
+      <div class="output-area" id="terminal"></div>
+      <div class="command-input">
+        <input type="text" id="commandInput" placeholder="> Enter command..." onkeydown="handleCommand(event)" />
+      </div>
     </div>
-
-    <div class="header">Initializing Secure Access Terminal v4.2...</div>
-
-    <div class="terminal-area" id="terminal">
-      *** GOVERNMENT OS v4.2 ***<br>
-      COPYRIGHT (C) GOVSEC SYSTEMS 2088-2125<br>
-      ALL RIGHTS RESERVED<br>
-      --------------------------------------------------<br>
-      SYSTEM ONLINE . . .<br>
-      BIOS CHECK OK<br>
-      MEM TEST ...................... OK<br>
-      SECURE NETWORK NODE FOUND<br>
-      TYPE "HELP" FOR COMMAND LIST
-    </div>
-
-    <div class="input-area">
-      <input type="text" id="commandInput" placeholder="> Enter command..." onkeydown="handleCommand(event)" />
+    <div class="right-panel">
+      <div class="doc-viewer" id="docViewer">
+        DOCUMENT VIEWER\n----------------------\nFiles will appear here when opened.
+      </div>
     </div>
   </div>
 
   <script>
+    setTimeout(() => {
+      document.getElementById("boot").style.display = "none";
+      const interfaceEl = document.getElementById("interface");
+      interfaceEl.style.display = "grid";
+    }, 4000);
+
+    const documentNames = [
+      "Prototype Incident Report",
+      "Power Node 3 Maintenance Log",
+      "Psych Eval - Operative R32",
+      "Shelter Supply Audit",
+      "FOI Intercepted Communication",
+      "Mission Briefing - Operation Ember",
+      "Genetic Mutation Chart",
+      "System Anomaly Report",
+      "Artifact Recovery Notes",
+      "Expedition Log Alpha 9"
+    ];
+
+    function generateDocuments(level) {
+      const docs = [];
+      for (let i = 0; i < documentNames.length; i++) {
+        const show = level >= 3 || i < 5; // hide second half until level 3+
+        if (show) {
+          const audio = i % 3 === 0 && level >= 3;
+          docs.push({
+            name: `${documentNames[i]}.txt`,
+            content: `--- ${documentNames[i]} ---\nClassified contents.`,
+            audio: audio
+          });
+        }
+      }
+      return docs;
+    }
+
     const accounts = {
       "foi-trainee-22": {
         password: "omega-train",
@@ -107,26 +160,16 @@
       }
     };
 
-    function generateDocuments(level) {
-      const docs = [];
-      for (let i = 20; i <= 136; i++) {
-        const isRestricted = i % (6 - level) !== 0; // Higher level = more access
-        const statusIcon = isRestricted ? "[⚠️]" : "[✔️]";
-        docs.push({ name: `Document-${i}.txt`, restricted: isRestricted, icon: statusIcon });
-      }
-      return docs;
-    }
-
     let loggedInUser = null;
 
     function handleCommand(event) {
       if (event.key === "Enter") {
         const input = document.getElementById("commandInput");
         const terminal = document.getElementById("terminal");
+        const docViewer = document.getElementById("docViewer");
         const fullCommand = input.value.trim();
         const parts = fullCommand.split(" ");
         const command = parts[0].toLowerCase();
-
         let response = "";
 
         if (command === "help") {
@@ -142,7 +185,7 @@
           }
         } else if (command === "files") {
           if (loggedInUser) {
-            response = "> FILES:\n" + loggedInUser.documents.map(doc => `  - ${doc.icon} ${doc.name}`).join("\n");
+            response = "> FILES:\n" + loggedInUser.documents.map(doc => `  - ${doc.name}`).join("\n");
           } else {
             response = "> You must log in first.";
           }
@@ -153,11 +196,11 @@
             const filename = parts.slice(1).join(" ");
             const doc = loggedInUser.documents.find(d => d.name.toLowerCase() === filename.toLowerCase());
             if (!doc) {
-              response = "> ERROR: FILE NOT FOUND.";
-            } else if (doc.restricted) {
-              response = "> ERROR: ACCESS DENIED - Clearance Level Insufficient.";
+              response = "> ERROR: FILE NOT FOUND. This document may be unavailable due to system maintenance.";
             } else {
-              response = `> OPENING ${doc.name}...\n\n  -- FILE CONTENT PLACEHOLDER --\n  [Document ${doc.name} classified content here]`;
+              const audioHTML = doc.audio ? `<div class='audio-player'><audio controls src='dummy-audio.mp3'></audio></div>` : "";
+              docViewer.innerHTML = `DOCUMENT VIEWER\n----------------------\n${doc.name}\n\n${doc.content}${audioHTML}`;
+              response = `> OPENING ${doc.name}...`;
             }
           }
         } else if (command === "status") {
