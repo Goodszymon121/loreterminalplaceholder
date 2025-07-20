@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Government Terminal</title>
+  <style>
+    body {
+      background-color: #010b13;
+      color: #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      padding: 0;
+    }
+    .bios {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    .banner {
+      font-size: 1rem;
+      color: #ff0000;
+      border: 1px solid #ff0000;
+      padding: 0.5rem;
+      background-color: #1a0000;
+      margin-bottom: 1rem;
+    }
+    .header {
+      font-size: 1.25rem;
+      color: #00ffff;
+      margin-bottom: 1rem;
+    }
+    .terminal-area {
+      background-color: #000000;
+      border: 1px solid #00ff00;
+      padding: 1rem;
+      flex-grow: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .input-area {
+      margin-top: 1rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: #010b13;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="bios">
+    <div class="banner">
+      ⚠ SYSTEM NOTICE: Terminal undergoing scheduled renovation. Limited file access. Expect missing archive nodes. ⚠
+    </div>
+
+    <div class="header">Initializing Secure Access Terminal v4.2...</div>
+
+    <div class="terminal-area" id="terminal">
+      *** GOVERNMENT OS v4.2 ***<br>
+      COPYRIGHT (C) GOVSEC SYSTEMS 2088-2125<br>
+      ALL RIGHTS RESERVED<br>
+      --------------------------------------------------<br>
+      SYSTEM ONLINE . . .<br>
+      BIOS CHECK OK<br>
+      MEM TEST ...................... OK<br>
+      SECURE NETWORK NODE FOUND<br>
+      TYPE "HELP" FOR COMMAND LIST
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="commandInput" placeholder="> Enter command..." onkeydown="handleCommand(event)" />
+    </div>
+  </div>
+
+  <script>
+    const accounts = {
+      "foi-trainee-22": {
+        password: "omega-train",
+        level: 1,
+        documents: generateDocuments(1)
+      },
+      "foi-agent-11": {
+        password: "delta-shadow",
+        level: 2,
+        documents: generateDocuments(2)
+      },
+      "foi-officer-07": {
+        password: "beta-vector",
+        level: 3,
+        documents: generateDocuments(3)
+      },
+      "dept-head-01": {
+        password: "gamma-priority",
+        level: 4,
+        documents: generateDocuments(4)
+      },
+      "director-omega": {
+        password: "alpha-core",
+        level: 5,
+        documents: generateDocuments(5)
+      }
+    };
+
+    function generateDocuments(level) {
+      const docs = [];
+      for (let i = 20; i <= 136; i++) {
+        const isRestricted = i % (6 - level) !== 0; // Higher level = more access
+        const statusIcon = isRestricted ? "[⚠️]" : "[✔️]";
+        docs.push({ name: `Document-${i}.txt`, restricted: isRestricted, icon: statusIcon });
+      }
+      return docs;
+    }
+
+    let loggedInUser = null;
+
+    function handleCommand(event) {
+      if (event.key === "Enter") {
+        const input = document.getElementById("commandInput");
+        const terminal = document.getElementById("terminal");
+        const fullCommand = input.value.trim();
+        const parts = fullCommand.split(" ");
+        const command = parts[0].toLowerCase();
+
+        let response = "";
+
+        if (command === "help") {
+          response = "> Available commands:\n  - login [username] [password]\n  - clear\n  - status\n  - files\n  - open [filename]";
+        } else if (command === "login") {
+          const username = parts[1];
+          const password = parts[2];
+          if (accounts[username] && accounts[username].password === password) {
+            loggedInUser = accounts[username];
+            response = `> LOGIN SUCCESSFUL. Access level ${loggedInUser.level} confirmed.`;
+          } else {
+            response = "> LOGIN FAILED. Invalid credentials.";
+          }
+        } else if (command === "files") {
+          if (loggedInUser) {
+            response = "> FILES:\n" + loggedInUser.documents.map(doc => `  - ${doc.icon} ${doc.name}`).join("\n");
+          } else {
+            response = "> You must log in first.";
+          }
+        } else if (command === "open") {
+          if (!loggedInUser) {
+            response = "> You must log in first.";
+          } else {
+            const filename = parts.slice(1).join(" ");
+            const doc = loggedInUser.documents.find(d => d.name.toLowerCase() === filename.toLowerCase());
+            if (!doc) {
+              response = "> ERROR: FILE NOT FOUND.";
+            } else if (doc.restricted) {
+              response = "> ERROR: ACCESS DENIED - Clearance Level Insufficient.";
+            } else {
+              response = `> OPENING ${doc.name}...\n\n  -- FILE CONTENT PLACEHOLDER --\n  [Document ${doc.name} classified content here]`;
+            }
+          }
+        } else if (command === "status") {
+          response = loggedInUser
+            ? `> Logged in as agent. Access Level: ${loggedInUser.level}`
+            : "> Not logged in.";
+        } else if (command === "clear") {
+          terminal.innerHTML = "";
+          input.value = "";
+          return;
+        } else {
+          response = "> Unknown command. Type 'help' for available options.";
+        }
+
+        terminal.innerHTML += `\n${fullCommand}\n${response}`;
+        terminal.scrollTop = terminal.scrollHeight;
+        input.value = "";
+      }
+    }
+  </script>
+</body>
+</html>
