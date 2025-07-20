@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Government Terminal</title>
+  <style>
+    body {
+      background-color: #010b13;
+      color: #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+      margin: 0;
+      padding: 0;
+    }
+    .bios {
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    .banner {
+      font-size: 1rem;
+      color: #ff0000;
+      border: 1px solid #ff0000;
+      padding: 0.5rem;
+      background-color: #1a0000;
+      margin-bottom: 1rem;
+    }
+    .header {
+      font-size: 1.25rem;
+      color: #00ffff;
+      margin-bottom: 1rem;
+    }
+    .terminal-area {
+      background-color: #000000;
+      border: 1px solid #00ff00;
+      padding: 1rem;
+      flex-grow: 1;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+    .input-area {
+      margin-top: 1rem;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 0.5rem;
+      background-color: #010b13;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      font-family: 'Courier New', Courier, monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="bios">
+    <div class="banner">
+      ⚠ SYSTEM NOTICE: Terminal undergoing scheduled renovation. Limited file access. Expect missing archive nodes. ⚠
+    </div>
+
+    <div class="header">Initializing Secure Access Terminal v4.2...</div>
+
+    <div class="terminal-area" id="terminal">
+      > WELCOME TO GOVERNMENT OS™<br>
+      > Accessing node... SUCCESS<br>
+      > Loading secure assets... ERROR: FILE INDEX INCOMPLETE<br>
+      > Type "help" for available commands.
+    </div>
+
+    <div class="input-area">
+      <input type="text" id="commandInput" placeholder="> Enter command..." onkeydown="handleCommand(event)" />
+    </div>
+  </div>
+
+  <script>
+    function handleCommand(event) {
+      if (event.key === "Enter") {
+        const input = document.getElementById("commandInput");
+        const terminal = document.getElementById("terminal");
+        const command = input.value.trim().toLowerCase();
+        let response = "";
+
+        switch (command) {
+          case "help":
+            response = "> Available commands:\n  - login\n  - clear\n  - status";
+            break;
+          case "login":
+            response = "> LOGIN SYSTEM TEMPORARILY DISABLED. Awaiting account activation code.";
+            break;
+          case "status":
+            response = "> Terminal status: STANDBY\n  Clearance: NONE";
+            break;
+          case "clear":
+            terminal.innerHTML = "";
+            input.value = "";
+            return;
+          default:
+            response = "> Unknown command. Type 'help' for available options.";
+            break;
+        }
+
+        terminal.innerHTML += `\n${input.value}\n${response}`;
+        terminal.scrollTop = terminal.scrollHeight;
+        input.value = "";
+      }
+    }
+  </script>
+</body>
+</html>
