@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="en">
->
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,6 +22,8 @@
       font-size: 1.2rem;
       white-space: pre;
       overflow: hidden;
+      transition: opacity 1s ease;
+      z-index: 9999;
     }
     .boot-line {
       transform: translateY(-100%);
@@ -33,6 +34,9 @@
       to {
         transform: translateY(0);
       }
+    }
+    .boot-screen.fade {
+      opacity: 0;
     }
     .main-interface {
       display: none;
@@ -108,6 +112,8 @@
   </style>
 </head>
 <body>
+  <audio id="bootSound" src="startup-beep.mp3"></audio>
+
   <div class="boot-screen" id="boot"></div>
 
   <div class="main-interface" id="interface">
@@ -136,6 +142,8 @@
     ];
 
     const bootContainer = document.getElementById("boot");
+    const bootSound = document.getElementById("bootSound");
+
     bootLines.forEach((line, i) => {
       const div = document.createElement("div");
       div.className = "boot-line";
@@ -144,80 +152,19 @@
       bootContainer.appendChild(div);
     });
 
+    const totalBootTime = bootLines.length * 600;
+
     setTimeout(() => {
-      document.getElementById("boot").style.display = "none";
-      document.getElementById("interface").style.display = "grid";
-    }, 4000);
-
-    let loggedInUser = null;
-    let tokenData = {};
-
-    fetch('tokens.json')
-      .then(res => res.json())
-      .then(data => {
-        tokenData = data;
-      });
-
-    function handleCommand(event) {
-      if (event.key === "Enter") {
-        const input = document.getElementById("commandInput");
-        const terminal = document.getElementById("terminal");
-        const docViewer = document.getElementById("docViewer");
-        const fullCommand = input.value.trim();
-        const parts = fullCommand.split(" ");
-        const command = parts[0].toLowerCase();
-        let response = "";
-
-        if (command === "access") {
-          const token = parts[1];
-          const account = tokenData[token];
-          if (account) {
-            loggedInUser = account;
-            response = `> ACCESS GRANTED: ${loggedInUser.username} (Level ${loggedInUser.level})`;
-          } else {
-            response = "> INVALID TOKEN. Authorization failed.";
-          }
-        } else if (command === "status") {
-          response = loggedInUser ? `> Logged in as ${loggedInUser.username}. Access Level: ${loggedInUser.level}` : "> Not logged in.";
-        } else {
-          response = "> Unknown command. Type 'help' for available options.";
-        }
-
-        terminal.innerHTML += `\n${fullCommand}\n${response}`;
-        terminal.scrollTop = terminal.scrollHeight;
-        input.value = "";
-      }
-    }
-// Snippet inside <script> tag in your HTML file:
-
-const realDocs = {
-  level1: {
-    name: "Orientation Memo 01.txt",
-    content: "Welcome to the FOI Training Division. Comply with all onboarding regulations.\n\nUnauthorized disclosure of system pathways is grounds for erasure.",
-    meta: { level: 1, type: "memo", origin: "HR-T1" }
-  },
-  level2: {
-    name: "Shelter Access Protocol.txt",
-    content: "Level 2 operatives may enter Blue Zone shelters under escort.\n\nAll visitors must pass biometric verification.\nReport anomalies immediately.",
-    meta: { level: 2, type: "protocol", origin: "Security Ops" }
-  },
-  level3: {
-    name: "Incident Summary: Event GATEWAY.txt",
-    content: "Partial decryption successful.\nEvent GATEWAY occurred on 04.19.24 in Node-Delta 3.\nSubject interference recorded.\nFurther access requires Level 4.",
-    meta: { level: 3, type: "incident", origin: "Node-Delta 3" }
-  },
-  level4: {
-    name: "Field Report: Red Zone Sweep.txt",
-    content: "Agent-14 logs audio during sweep:\n\"…no visible movement… static interference getting worse.\"\n\n[Audio log attached]",
-    audio: true,
-    meta: { level: 4, type: "report", origin: "Sector Red-4" }
-  },
-  level5: {
-    name: "Project Enclosure: Deep Containment Brief.txt",
-    content: "CLASSIFIED: LVL 5 ONLY\nEnclosure Site-9 maintains four subterranean test vaults.\nSubject #E-071 continues unresponsive but stabilized.",
-    meta: { level: 5, type: "briefing", origin: "Site-9 Command" }
-  }
-};
+      bootSound.play();
+      bootContainer.classList.add("fade");
+      setTimeout(() => {
+        bootContainer.style.display = "none";
+        document.getElementById("interface").style.display = "grid";
+      }, 1000);
+    }, totalBootTime + 500);
+  </script>
+</body>
+</html>
 
 function generateDocuments(level) {
   const docs = [];
