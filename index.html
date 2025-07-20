@@ -1,8 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
+>
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Government Terminal</title>
   <style>
     body {
@@ -14,14 +15,24 @@
       overflow: hidden;
     }
     .boot-screen {
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      position: absolute;
+      width: 100%;
       height: 100vh;
       background-color: #010b13;
       color: #00ff00;
       font-size: 1.2rem;
       white-space: pre;
+      overflow: hidden;
+    }
+    .boot-line {
+      transform: translateY(-100%);
+      animation: slideIn 0.5s ease forwards;
+      padding: 0.3rem;
+    }
+    @keyframes slideIn {
+      to {
+        transform: translateY(0);
+      }
     }
     .main-interface {
       display: none;
@@ -97,14 +108,7 @@
   </style>
 </head>
 <body>
-  <div class="boot-screen" id="boot">
-    Initializing system BIOS v4.2
-\nChecking memory... OK
-\nConnecting to GOVNET... OK
-\nAuthenticating Terminal Integrity... OK
-\nLoading kernel modules... OK
-\nSystem ready. Launching interface...
-  </div>
+  <div class="boot-screen" id="boot"></div>
 
   <div class="main-interface" id="interface">
     <div class="banner">⚠ SYSTEM NOTICE: This terminal is currently under renovation. Many classified documents are temporarily inaccessible. Please proceed using active login credentials only. ⚠</div>
@@ -122,67 +126,37 @@
   </div>
 
   <script>
+    const bootLines = [
+      "Initializing system BIOS v4.2",
+      "Checking memory... OK",
+      "Connecting to GOVNET... OK",
+      "Authenticating Terminal Integrity... OK",
+      "Loading kernel modules... OK",
+      "System ready. Launching interface..."
+    ];
+
+    const bootContainer = document.getElementById("boot");
+    bootLines.forEach((line, i) => {
+      const div = document.createElement("div");
+      div.className = "boot-line";
+      div.style.animationDelay = `${i * 0.6}s`;
+      div.textContent = line;
+      bootContainer.appendChild(div);
+    });
+
     setTimeout(() => {
       document.getElementById("boot").style.display = "none";
       document.getElementById("interface").style.display = "grid";
     }, 4000);
 
-    // Example encoded account tokens (Base64)
-    const accountTokens = {
-      "T01FR0EtNDE4": { username: "foi-trainee-22", level: 1 },
-      "REVMVEEtMzk5": { username: "foi-agent-11", level: 2 },
-      "QkVUQS1TQ0FO": { username: "foi-officer-07", level: 3 },
-      "R0FNTUEtTEVELTQx": { username: "dept-head-01", level: 4 },
-      "QUxQSEEtQ09SRSI=": { username: "director-omega", level: 5 }
-    };
-
     let loggedInUser = null;
+    let tokenData = {};
 
-    const dummyDocs = [
-      "Incident Report 12A",
-      "Containment Failure Log Delta-6",
-      "Maintenance Report Omega-11",
-      "Expedition Summary Red Zone 3",
-      "Emergency Response Debrief Bravo",
-      "Thermal Outage Alert Central Grid",
-      "Subject Isolation Case 009",
-      "Mutagenic Sample Transport Log",
-      "Personnel Reassignment Memo",
-      "Unexplained Signal Record 8"
-    ];
-
-    function generateDocuments(level) {
-      const docs = [];
-      if (level === 1) {
-        docs.push({
-          name: "Kibaek Overview.txt",
-          content: "Welcome to Kibaek Simulation. Confidential.",
-          meta: { level: 1, type: "report", origin: "SimOps" }
-        });
-      }
-      if (level >= 2) {
-        docs.push({
-          name: "Shelter Systems Summary.txt",
-          content: "Shelter capacities and layout design.",
-          meta: { level: 2, type: "systems", origin: "Central Shelters" }
-        });
-      }
-      if (level >= 3) {
-        dummyDocs.forEach((title, i) => {
-          docs.push({
-            name: `${title}.txt`,
-            content: `--- ${title} ---\nReport content classified.`,
-            audio: i % 3 === 0 && level >= 4,
-            meta: {
-              level: 3 + (i % 3),
-              type: "incident",
-              origin: `Node-${100 + i}`
-            }
-          });
-        });
-      }
-      return docs;
-    }
+    fetch('tokens.json')
+      .then(res => res.json())
+      .then(data => {
+        tokenData = data;
+      });
 
     function handleCommand(event) {
       if (event.key === "Enter") {
@@ -194,50 +168,17 @@
         const command = parts[0].toLowerCase();
         let response = "";
 
-        if (command === "help") {
-          response = "> Available commands:\n  - access [token]\n  - clear\n  - status\n  - files\n  - open [filename]";
-        } else if (command === "access") {
+        if (command === "access") {
           const token = parts[1];
-          const account = accountTokens[token];
+          const account = tokenData[token];
           if (account) {
-            loggedInUser = {
-              username: account.username,
-              level: account.level,
-              documents: generateDocuments(account.level)
-            };
+            loggedInUser = account;
             response = `> ACCESS GRANTED: ${loggedInUser.username} (Level ${loggedInUser.level})`;
           } else {
             response = "> INVALID TOKEN. Authorization failed.";
           }
-        } else if (command === "files") {
-          if (loggedInUser) {
-            response = "> FILES:\n" + loggedInUser.documents.map(doc => `  - ${doc.name}`).join("\n");
-          } else {
-            response = "> You must enter a valid access token.";
-          }
-        } else if (command === "open") {
-          if (!loggedInUser) {
-            response = "> You must enter a valid access token.";
-          } else {
-            const filename = parts.slice(1).join(" ");
-            const doc = loggedInUser.documents.find(d => d.name.toLowerCase() === filename.toLowerCase());
-            if (!doc) {
-              response = "> ERROR: FILE NOT FOUND. This document may be unavailable due to system maintenance.";
-            } else {
-              const audioHTML = doc.audio ? `<div class='audio-player'><audio controls src='dummy-audio.mp3'></audio></div>` : "";
-              const metaHTML = `<div class='metadata'>Clearance Level: ${doc.meta.level} | Type: ${doc.meta.type} | Origin: ${doc.meta.origin}</div>`;
-              docViewer.innerHTML = `DOCUMENT VIEWER<br>----------------------<br>${doc.name}<br><br>${doc.content}${metaHTML}${audioHTML}`;
-              response = `> OPENING ${doc.name}...`;
-            }
-          }
         } else if (command === "status") {
-          response = loggedInUser
-            ? `> Logged in as ${loggedInUser.username}. Access Level: ${loggedInUser.level}`
-            : "> Not logged in.";
-        } else if (command === "clear") {
-          terminal.innerHTML = "";
-          input.value = "";
-          return;
+          response = loggedInUser ? `> Logged in as ${loggedInUser.username}. Access Level: ${loggedInUser.level}` : "> Not logged in.";
         } else {
           response = "> Unknown command. Type 'help' for available options.";
         }
