@@ -74,33 +74,67 @@
   </div>
 
   <script>
+    const accounts = {
+      "foi-trainee-22": {
+        password: "omega-train",
+        level: 1,
+        documents: [
+          "Welcome Packet.txt",
+          "Training Tape Log 01.txt"
+        ]
+      },
+      "foi-agent-11": {
+        password: "delta-shadow",
+        level: 2,
+        documents: [
+          "Prototype Incident Report.log",
+          "Mission Order 2249.log"
+        ]
+      }
+    };
+
+    let loggedInUser = null;
+
     function handleCommand(event) {
       if (event.key === "Enter") {
         const input = document.getElementById("commandInput");
         const terminal = document.getElementById("terminal");
-        const command = input.value.trim().toLowerCase();
+        const fullCommand = input.value.trim();
+        const parts = fullCommand.split(" ");
+        const command = parts[0].toLowerCase();
+
         let response = "";
 
-        switch (command) {
-          case "help":
-            response = "> Available commands:\n  - login\n  - clear\n  - status";
-            break;
-          case "login":
-            response = "> LOGIN SYSTEM TEMPORARILY DISABLED. Awaiting account activation code.";
-            break;
-          case "status":
-            response = "> Terminal status: STANDBY\n  Clearance: NONE";
-            break;
-          case "clear":
-            terminal.innerHTML = "";
-            input.value = "";
-            return;
-          default:
-            response = "> Unknown command. Type 'help' for available options.";
-            break;
+        if (command === "help") {
+          response = "> Available commands:\n  - login [username] [password]\n  - clear\n  - status\n  - files";
+        } else if (command === "login") {
+          const username = parts[1];
+          const password = parts[2];
+          if (accounts[username] && accounts[username].password === password) {
+            loggedInUser = accounts[username];
+            response = `> LOGIN SUCCESSFUL. Access level ${loggedInUser.level} confirmed.`;
+          } else {
+            response = "> LOGIN FAILED. Invalid credentials.";
+          }
+        } else if (command === "files") {
+          if (loggedInUser) {
+            response = `> FILES:\n  - ${loggedInUser.documents.join("\n  - ")}`;
+          } else {
+            response = "> You must log in first.";
+          }
+        } else if (command === "status") {
+          response = loggedInUser
+            ? `> Logged in as agent. Access Level: ${loggedInUser.level}`
+            : "> Not logged in.";
+        } else if (command === "clear") {
+          terminal.innerHTML = "";
+          input.value = "";
+          return;
+        } else {
+          response = "> Unknown command. Type 'help' for available options.";
         }
 
-        terminal.innerHTML += `\n${input.value}\n${response}`;
+        terminal.innerHTML += `\n${fullCommand}\n${response}`;
         terminal.scrollTop = terminal.scrollHeight;
         input.value = "";
       }
