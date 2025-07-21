@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>The Government Terminal</title>
   <style>
     body {
@@ -13,6 +13,7 @@
       padding: 0;
       overflow: hidden;
     }
+
     .boot-screen {
       position: absolute;
       width: 100%;
@@ -25,40 +26,41 @@
       transition: opacity 1s ease;
       z-index: 9999;
     }
+
     .boot-line {
       transform: translateY(-100%);
       animation: slideIn 0.5s ease forwards;
       padding: 0.3rem;
     }
+
     @keyframes slideIn {
-      to {
-        transform: translateY(0);
-      }
+      to { transform: translateY(0); }
     }
+
     .boot-screen.fade {
       opacity: 0;
     }
+
     .main-interface {
       display: none;
       grid-template-columns: 1fr 2fr 2fr;
       grid-template-rows: 1fr auto;
       height: 100vh;
       background: linear-gradient(to right, #0a0f1c, #111);
-      color: #00ff00;
     }
+
     .left-panel {
       padding: 1rem;
       border-right: 2px solid #222;
     }
+
     .output-area {
       height: calc(100vh - 3rem);
       overflow-y: auto;
       white-space: pre-wrap;
       font-size: 0.9rem;
     }
-    .command-input {
-      padding-top: 0.5rem;
-    }
+
     .command-input input {
       width: 100%;
       padding: 0.5rem;
@@ -67,12 +69,14 @@
       border: 1px solid #00ff00;
       font-family: 'Courier New', Courier, monospace;
     }
+
     .right-panel {
       padding: 1rem;
       border-left: 2px solid #222;
       background-color: #0c121f;
       overflow-y: auto;
     }
+
     .doc-viewer {
       background-color: #111;
       color: #00ff00;
@@ -80,6 +84,7 @@
       border: 1px solid #00ff00;
       font-size: 0.9rem;
     }
+
     .metadata {
       margin-top: 1rem;
       font-size: 0.8rem;
@@ -87,6 +92,7 @@
       padding-top: 0.5rem;
       color: #00cccc;
     }
+
     .audio-player {
       background-color: #222;
       padding: 0.5rem;
@@ -94,9 +100,11 @@
       border: 1px solid #00ff00;
       border-radius: 5px;
     }
+
     .audio-player audio {
       width: 100%;
     }
+
     .banner {
       position: fixed;
       top: 0;
@@ -113,7 +121,6 @@
 </head>
 <body>
   <audio id="bootSound" src="startup-beep.mp3"></audio>
-
   <div class="boot-screen" id="boot"></div>
 
   <div class="main-interface" id="interface">
@@ -162,35 +169,110 @@
         document.getElementById("interface").style.display = "grid";
       }, 1000);
     }, totalBootTime + 500);
-  </script>
-</body>
-</html>
 
-function generateDocuments(level) {
-  const docs = [];
-  if (level >= 1) docs.push(realDocs.level1);
-  if (level >= 2) docs.push(realDocs.level2);
-  if (level >= 3) docs.push(realDocs.level3);
-  if (level >= 4) docs.push(realDocs.level4);
-  if (level >= 5) docs.push(realDocs.level5);
+    let loggedInUser = null;
+    let tokenData = {};
 
-  // Dummy docs only start at Level 3
-  if (level >= 3) {
-    dummyDocs.forEach((title, i) => {
-      docs.push({
-        name: `${title}.txt`,
-        content: `--- ${title} ---\nReport content classified.`,
-        audio: i % 3 === 0 && level >= 4,
-        meta: {
-          level: 3 + (i % 3),
-          type: "incident",
-          origin: `Node-${100 + i}`
+    const realDocs = {
+      level1: {
+        name: "Orientation Memo 01.txt",
+        content: "Welcome to the FOI Training Division. Comply with all onboarding regulations.\nUnauthorized disclosure of system pathways is grounds for erasure.",
+        meta: { level: 1, type: "memo", origin: "HR-T1" }
+      },
+      level2: {
+        name: "Shelter Access Protocol.txt",
+        content: "Level 2 operatives may enter Blue Zone shelters under escort.\nAll visitors must pass biometric verification.\nReport anomalies immediately.",
+        meta: { level: 2, type: "protocol", origin: "Security Ops" }
+      },
+      level3: {
+        name: "Incident Summary: Event GATEWAY.txt",
+        content: "Partial decryption successful.\nEvent GATEWAY occurred on 04.19.24 in Node-Delta 3.\nSubject interference recorded.\nFurther access requires Level 4.",
+        meta: { level: 3, type: "incident", origin: "Node-Delta 3" }
+      },
+      level4: {
+        name: "Field Report: Red Zone Sweep.txt",
+        content: "Agent-14 logs audio during sweep:\n\"…no visible movement… static interference getting worse.\"\n\n[Audio log attached]",
+        audio: true,
+        meta: { level: 4, type: "report", origin: "Sector Red-4" }
+      },
+      level5: {
+        name: "Project Enclosure: Deep Containment Brief.txt",
+        content: "CLASSIFIED: LVL 5 ONLY\nEnclosure Site-9 maintains four subterranean test vaults.\nSubject #E-071 continues unresponsive but stabilized.",
+        meta: { level: 5, type: "briefing", origin: "Site-9 Command" }
+      }
+    };
+
+    function generateDocuments(level) {
+      const docs = [];
+      if (level >= 1) docs.push(realDocs.level1);
+      if (level >= 2) docs.push(realDocs.level2);
+      if (level >= 3) docs.push(realDocs.level3);
+      if (level >= 4) docs.push(realDocs.level4);
+      if (level >= 5) docs.push(realDocs.level5);
+      return docs;
+    }
+
+    fetch('tokens.json')
+      .then(res => res.json())
+      .then(data => { tokenData = data; });
+
+    function handleCommand(event) {
+      if (event.key === "Enter") {
+        const input = document.getElementById("commandInput");
+        const terminal = document.getElementById("terminal");
+        const docViewer = document.getElementById("docViewer");
+        const fullCommand = input.value.trim();
+        const parts = fullCommand.split(" ");
+        const command = parts[0].toLowerCase();
+        let response = "";
+
+        if (command === "help") {
+          response = `> Available commands:\n  - access [token]\n  - status\n  - files\n  - open [filename]\n  - clear`;
+        } else if (command === "access") {
+          const token = parts[1];
+          const account = tokenData[token];
+          if (account) {
+            loggedInUser = { ...account, documents: generateDocuments(account.level) };
+            response = `> ACCESS GRANTED: ${loggedInUser.username} (Level ${loggedInUser.level})`;
+          } else {
+            response = "> INVALID TOKEN. Authorization failed.";
+          }
+        } else if (command === "files") {
+          if (loggedInUser) {
+            response = "> FILES:\n" + loggedInUser.documents.map(d => `  - ${d.name}`).join("\n");
+          } else {
+            response = "> You must enter a valid access token.";
+          }
+        } else if (command === "open") {
+          if (!loggedInUser) {
+            response = "> You must enter a valid access token.";
+          } else {
+            const filename = parts.slice(1).join(" ");
+            const doc = loggedInUser.documents.find(d => d.name.toLowerCase() === filename.toLowerCase());
+            if (!doc) {
+              response = "> ERROR: FILE NOT FOUND. This document may be unavailable due to system maintenance.";
+            } else {
+              const audioHTML = doc.audio ? `<div class='audio-player'><audio controls src='dummy-audio.mp3'></audio></div>` : "";
+              const metaHTML = `<div class='metadata'>Clearance Level: ${doc.meta.level} | Type: ${doc.meta.type} | Origin: ${doc.meta.origin}</div>`;
+              docViewer.innerHTML = `DOCUMENT VIEWER<br>----------------------<br>${doc.name}<br><br>${doc.content}${metaHTML}${audioHTML}`;
+              response = `> OPENING ${doc.name}...`;
+            }
+          }
+        } else if (command === "status") {
+          response = loggedInUser ? `> Logged in as ${loggedInUser.username}. Access Level: ${loggedInUser.level}` : "> Not logged in.";
+        } else if (command === "clear") {
+          terminal.innerHTML = "";
+          input.value = "";
+          return;
+        } else {
+          response = "> Unknown command. Type 'help' for available options.";
         }
-      });
-    });
-  }
-  return docs;
-}
+
+        terminal.innerHTML += `\n${fullCommand}\n${response}`;
+        terminal.scrollTop = terminal.scrollHeight;
+        input.value = "";
+      }
+    }
   </script>
 </body>
 </html>
